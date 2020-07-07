@@ -34,8 +34,8 @@ def get_idcolor(value):
     return get_first_id()
 
 
-def get_idModel(value):
-    mycursor.execute("SELECT idModels FROM Models WHERE ModelName='%s'" % (value))
+def get_idModel(model_name):
+    mycursor.execute("SELECT idModels FROM Models WHERE ModelName='%s'" % (model_name))
     return get_first_id()
 
 
