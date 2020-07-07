@@ -1,9 +1,10 @@
+# coding=utf-8
+
 import mysql.connector
 from tkinter import *
 from tkinter import ttk
 from tkinter.ttk import *
 from tkinter import scrolledtext
-from actions import *
 from tkinter import messagebox
 import datetime
 
@@ -15,10 +16,11 @@ window.geometry('700x400')
 
 
 mydb = mysql.connector.connect(
-    host='localhost',
-    user='root',
-    passwd='9884Nadya',
-    database='mydb')
+    host='127.0.0.1',
+    port=3306,
+    user='cars',
+    passwd='cars',
+    database='cars')
 mycursor = mydb.cursor()
 
 
@@ -157,7 +159,7 @@ def check_availability(car_data):
     return idOrders
 
 
-# search a car 
+# search a car
 def search_car():
     sql_command = "SELECT * FROM Cars WHERE "
     where_clauses = []
@@ -189,7 +191,7 @@ def search_car():
         if not(car_dict.get(key) == None or car_dict.get(key) == ''):
             where_clauses.append(key + "=" + "'" + car_dict.get(key) + "'")
     where_clauses = ' AND '.join(where_clauses)
-   
+
     mycursor.execute(sql_command + where_clauses)
     result = [i for i in mycursor]
     if result:
@@ -339,7 +341,7 @@ def show_all_orders():
 
 
 def update_car():
-    sql_command = 'UPDATE Cars SET %s WHERE idCars=%s' 
+    sql_command = 'UPDATE Cars SET %s WHERE idCars=%s'
     idCar = idCar_input_c.get()
 
     set_clauses = []
