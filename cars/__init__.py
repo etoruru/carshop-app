@@ -1,109 +1,26 @@
-import mysql.connector
+# coding=utf-8
+
+import cars.config as config
+import cars.db as db
+
 from tkinter import *
 from tkinter import ttk
 from tkinter.ttk import *
 from tkinter import scrolledtext
-from actions import *
 from tkinter import messagebox
+
 import datetime
 
 
-
 window = Tk()
-window.title('CarShop App')
-window.geometry('700x400')
+window.title(config.app_title)
+window.geometry(config.app_geom)
 
-
-mydb = mysql.connector.connect(
-    host='localhost',
-    user='root',
-    passwd='9884Nadya',
-    database='mydb')
-mycursor = mydb.cursor()
-
-
-# Commit changes
-mydb.commit()
 
 
 # --------------------Actions--------------------------
-# get id
-def get_idcolor(value):
-    mycursor.execute("SELECT idColor FROM Color WHERE ColorName='%s'" % (value))
-    for x in mycursor:
-        idColor = ''.join([str(i) for i in list(x)])
-    return idColor
 
 
-def get_idModel(value):
-    mycursor.execute("SELECT idModels FROM Models WHERE ModelName='%s'" % (value))
-    for x in mycursor:
-        idModel = ''.join([str(i) for i in list(x)])
-    return idModel
-
-
-def get_idBody_type(value):
-    mycursor.execute("SELECT idBody_type FROM Body_type WHERE TypeName='%s'" % (value))
-    for x in mycursor:
-        idBody_type = ''.join([str(i) for i in list(x)])
-    return idBody_type
-
-
-def get_idClients(value):
-    idClient = None
-    mycursor.execute("SELECT idClients FROM Clients WHERE passport_data='%s'" % (value))
-    for x in mycursor:
-        idClient = ''.join([str(i) for i in list(x)])
-    return idClient
-
-
-def get_idform_payment(value):
-    mycursor.execute("SELECT idForm_of_payment FROM Form_of_payment WHERE PaymentName='%s'" % (value))
-    for x in mycursor:
-        idform_payment = ''.join([str(i) for i in list(x)])
-    return idform_payment
-
-
-def get_colorname(value):
-    mycursor.execute("SELECT ColorName FROM Color WHERE idColor=%d" % (value))
-    for x in mycursor:
-        NameColor = ''.join([str(i) for i in list(x)])
-    return NameColor
-
-
-def get_body_type(value):
-    mycursor.execute("SELECT TypeName FROM Body_type WHERE idBody_type=%d" % (value))
-    for x in mycursor:
-        Body_type = ''.join([str(i) for i in list(x)])
-    return Body_type
-
-
-def get_model_name(value):
-    mycursor.execute("SELECT ModelName FROM Models WHERE idModels=%d" % (value))
-    for x in mycursor:
-        model_name = ''.join([str(i) for i in list(x)])
-    return model_name
-
-
-def get_payment_name(value):
-    mycursor.execute("SELECT PaymentName FROM Form_of_payment WHERE idForm_of_payment=%d" % (value))
-    for x in mycursor:
-        payment_name = ''.join([str(i) for i in list(x)])
-    return payment_name
-
-
-def get_client_firstname(value):
-    mycursor.execute("SELECT Firstname FROM Clients WHERE idClients=%d" % (value))
-    for x in mycursor:
-        client_firstname = ''.join([str(i) for i in list(x)])
-    return client_firstname
-
-
-def get_customer_firstname(value):
-    mycursor.execute("SELECT Firstname FROM Customers WHERE idCustomers=%d" % (value))
-    for x in mycursor:
-        customer_firstname = ''.join([str(i) for i in list(x)])
-    return customer_firstname
 
 
 
@@ -133,9 +50,9 @@ def display_result(car_data):
     modified_data = between_markers(str(car_data), '(',')')
     values = str(modified_data).split(',')
     idColor, idBody_type, idModel = values[-3:]
-    color_name = get_colorname(int(idColor))
-    body_type = get_body_type(int(idBody_type))
-    model_name = get_model_name(int(idModel))
+    color_name = db.get_colorname(int(idColor))
+    body_type = db.get_body_type(int(idBody_type))
+    model_name = db.get_model_name(int(idModel))
     values = values[:-3] + [color_name, body_type, model_name] + ['\n']
     key = ['№: ', "Коробка передач: ", "Пробег: ",
            "№РТС: ", "Цена: ", "Год выпуска: ",
@@ -148,31 +65,24 @@ def display_result(car_data):
     return car_string
 
 
-def check_availability(car_data):
-    idOrders = None
-    sql_command = 'SELECT idOrders FROM Orders WHERE Cars_idCars=%s' % car_data[0]
-    mycursor.execute(sql_command)
-    for x in mycursor:
-        idOrders = ''.join([str(i) for i in list(x)])
-    return idOrders
 
 
-# search a car 
+# search a car
 def search_car():
     sql_command = "SELECT * FROM Cars WHERE "
     where_clauses = []
     if not(color_input_s.get() == ''):
-        idColor = get_idcolor(color_input_s.get())
+        idColor = db.get_idcolor(color_input_s.get())
     else:
         idColor = ''
 
     if not(model_name_input_s.get() == ''):
-        idModel = get_idModel(model_name_input_s.get())
+        idModel = db.get_idModel(model_name_input_s.get())
     else:
         idModel = ''
 
     if not(body_type_input_s.get() == ''):
-        idBody_type = get_idBody_type(body_type_input_s.get())
+        idBody_type = db.get_idBody_type(body_type_input_s.get())
     else:
         idBody_type = ''
 
@@ -189,12 +99,12 @@ def search_car():
         if not(car_dict.get(key) == None or car_dict.get(key) == ''):
             where_clauses.append(key + "=" + "'" + car_dict.get(key) + "'")
     where_clauses = ' AND '.join(where_clauses)
-   
-    mycursor.execute(sql_command + where_clauses)
+
+    db.execute(sql_command + where_clauses)
     result = [i for i in mycursor]
     if result:
         for i in result:
-            if check_availability(i) == None:
+            if db.check_availability(i) == None:
                 txt.insert(INSERT, display_result(i) + '\n')
     else:
         messagebox.showinfo('Ошибка',"Машина с такими характеристиками отсутствует!")
@@ -221,32 +131,32 @@ def clear():
 
 # submit car to database
 def add_car():
-    idColor = get_idcolor(color_input.get())
-    idModel = get_idModel(model_name_input.get())
-    idBody_type = get_idBody_type(body_type_input.get())
+    idColor = db.get_idcolor(color_input.get())
+    idModel = db.get_idModel(model_name_input.get())
+    idBody_type = db.get_idBody_type(body_type_input.get())
 
     sql_command = 'INSERT INTO Cars(Transmition, Mileage, PTC, Price, Year_of_issue, Engine_capacity, Color_idColor, Body_type_idBody_type, Model_idModel) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
     values = (transmition_input.get(), mileage_input.get(),
               num_ptc_input.get(), price_input.get(),
               year_issue_input.get(), float(engine_capacity_input.get()),
               int(idColor), int(idBody_type), int(idModel))
-    mycursor.execute(sql_command, values)
+    db.execute(sql_command, values)
 
     # commit changes
-    mydb.commit()
+    db.commit()
     messagebox.showinfo('','Машина добавлена!')
 
 
 def add_client(passport_data, customer_firstName, customer_lastName, phone):
     sql_command = "INSERT INTO Clients(Firstname, Lastname, Passport_data, Phone_num) VALUES(%s, %s, %s, %s)"
     values = (customer_firstName, customer_lastName, passport_data, phone)
-    mycursor.execute(sql_command, values)
-    mydb.commit()
+    db.execute(sql_command, values)
+    db.commit()
 
 
 def get_idcar(value):
     idCar = None
-    mycursor.execute('SELECT idOrders FROM Orders WHERE Cars_idCars="%s"' % (value))
+    db.execute('SELECT idOrders FROM Orders WHERE Cars_idCars="%s"' % (value))
     for x in mycursor:
         idCar = ''.join([str(i) for i in list(x)])
     return idCar
@@ -281,44 +191,43 @@ def make_order():
     else:
         idCar = idCar_input.get()
 
-    idClient = get_idClients(passport_data)
+    idClient = db.get_idClients(passport_data)
     if idClient == None:
         add_client(passport_data, customer_firstName, customer_lastName, phone)
-        idClient = get_idClients(passport_data)
+        idClient = db.get_idClients(passport_data)
 
-    idForm_of_payment = get_idform_payment(payment_form)
+    idForm_of_payment = db.get_idform_payment(payment_form)
     values = (date, idCar, idClient, idForm_of_payment, idseller)
     val = []
     for data in values:
         if  not data == None:
             val.append(data)
     if len(val) == len(values):
-        mycursor.execute(sql_command, values)
-        mydb.commit()
+        db.execute(sql_command, values)
+        db.commit()
         messagebox.showinfo("", "Заказ оформлен!")
     else:
         messagebox.showinfo("Ошибка!", "Все поля должны быть заполнены!")
 
 
-def watch_all():
-    sql_command = 'SELECT * FROM Cars'
-    mycursor.execute(sql_command)
-    result = [i for i in mycursor]
-    for i in result:
-        all_car_text.insert(INSERT, display_result(i) + '\n')
+def watch_all_cars():
+    all_car_text.delete("1.0", END)
+    cars = db.get_all_cars()
+    for car in cars:
+        all_car_text.insert(INSERT, display_result(car) + '\n')
 
 
 def modify_str(order_data):
     modified_data = between_markers(str(order_data), '(',')')
     values = str(modified_data).split(',')
     idCar, idClient, idCustomer, idform_payment = values[-4:]
-    mycursor.execute("SELECT Model_idModel FROM Cars WHERE idCars='%s'" % (idCar))
+    db.execute("SELECT Model_idModel FROM Cars WHERE idCars='%s'" % (idCar))
     for x in mycursor:
         idModel = ''.join([str(i) for i in list(x)])
-    models_name = get_model_name(int(idModel))
-    client_firstName = get_client_firstname(int(idClient))
-    customer_firstName = get_customer_firstname(int(idCustomer))
-    payment_name = get_payment_name(int(idform_payment))
+    models_name = db.get_model_name(int(idModel))
+    client_firstName = db.get_client_firstname(int(idClient))
+    customer_firstName = db.get_customer_firstname(int(idCustomer))
+    payment_name = db.get_payment_name(int(idform_payment))
 
     values = values[:-4] + [models_name, client_firstName, customer_firstName, payment_name] + ['\n']
     key = ['№: ', "Год продажи: ", "Марка: ",
@@ -331,30 +240,28 @@ def modify_str(order_data):
 
 
 def show_all_orders():
-    sql_command = 'SELECT * FROM Orders'
-    mycursor.execute(sql_command)
-    result = [i for i in mycursor]
-    for i in result:
-        orders_txt.insert(INSERT, modify_str(i) + '\n')
+    orders = db.get_all_orders()
+    for order in orders:
+        orders_txt.insert(INSERT, modify_str(orders) + '\n')
 
 
 def update_car():
-    sql_command = 'UPDATE Cars SET %s WHERE idCars=%s' 
+    sql_command = 'UPDATE Cars SET %s WHERE idCars=%s'
     idCar = idCar_input_c.get()
 
     set_clauses = []
     if not(color_input.get() == ''):
-        idColor = get_idcolor(color_input.get())
+        idColor = db.get_idcolor(color_input.get())
     else:
         idColor = ''
 
     if not(model_name_input.get() == ''):
-        idModel = get_idModel(model_name_input.get())
+        idModel = db.get_idModel(model_name_input.get())
     else:
         idModel = ''
 
     if not(body_type_input.get() == ''):
-        idBody_type = get_idBody_type(body_type_input.get())
+        idBody_type = db.get_idBody_type(body_type_input.get())
     else:
         idBody_type = ''
 
@@ -373,8 +280,8 @@ def update_car():
     set_clauses = ', '.join(set_clauses)
     print(sql_command % (set_clauses, int(idCar)))
     if idCar:
-        mycursor.execute(sql_command % (set_clauses, int(idCar)))
-        mydb.commit()
+        db.execute(sql_command % (set_clauses, int(idCar)))
+        db.commit()
         messagebox.showinfo('', 'Данные успешно изменены!')
     else:
         messagebox.showinfo('Ошибка!', 'Для изменения необходимо ввести номер машины!')
@@ -385,8 +292,8 @@ def delete_car():
     confirmation = messagebox.askyesno(title='Подтверждение',
                                        message='Вы действительно хотите удалить машину с № %s' % (idCar_input_c.get()))
     if confirmation:
-        mycursor.execute(sql_command)
-        mydb.commit()
+        db.execute(sql_command)
+        db.commit()
         messagebox.showinfo('', 'Данные успешно удалены!')
 
 
@@ -464,7 +371,7 @@ clear_fields_button = Button(catalog_tab,
                              command=clear_fields)
 clear_fields_button.grid(row=9, column=1)
 
-watchAll_button = Button(catalog_tab, text='Посмотреть все', command=watch_all)
+watchAll_button = Button(catalog_tab, text='Посмотреть все', command=watch_all_cars)
 watchAll_button.grid(row=9, column=2)
 
 # create a window with text
