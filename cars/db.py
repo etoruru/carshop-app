@@ -6,7 +6,7 @@ import mysql.connector
 
 mydb = mysql.connector.connect(
     host=config.db_host,
-    port=config.db_port,
+    #port=config.db_port,
     user=config.db_user,
     passwd=config.db_pass,
     database=config.db_name
@@ -29,8 +29,8 @@ def get_first_id():
         return str(row[0])
 
 
-def get_idcolor(value):
-    mycursor.execute("SELECT idColor FROM Color WHERE ColorName='%s'" % (value))
+def get_idcolor(color_name):
+    mycursor.execute("SELECT idColor FROM Color WHERE ColorName='%s'" % (color_name))
     return get_first_id()
 
 
@@ -39,47 +39,48 @@ def get_idModel(model_name):
     return get_first_id()
 
 
-def get_idBody_type(value):
-    mycursor.execute("SELECT idBody_type FROM Body_type WHERE TypeName='%s'" % (value))
+def get_idBody_type(type_name):
+    mycursor.execute("SELECT idBody_type FROM Body_type WHERE TypeName='%s'" % (type_name))
     return get_first_id()
 
 
-def get_idClients(value):
-    mycursor.execute("SELECT idClients FROM Clients WHERE passport_data='%s'" % (value))
+def get_idClients(passport_data):
+    mycursor.execute("SELECT idClients FROM Clients WHERE passport_data='%s'" % (passport_data))
     return get_first_id()
 
 
-def get_idform_payment(value):
-    mycursor.execute("SELECT idForm_of_payment FROM Form_of_payment WHERE PaymentName='%s'" % (value))
+def get_idform_payment(payment_name):
+    mycursor.execute("SELECT idForm_of_payment FROM Form_of_payment WHERE PaymentName='%s'" % (payment_name))
     return get_first_id()
 
 
-def get_colorname(value):
-    mycursor.execute("SELECT ColorName FROM Color WHERE idColor=%d" % (value))
+def get_colorname(id_color):
+    mycursor.execute("SELECT ColorName FROM Color WHERE idColor=%d" % (id_color))
     return get_first_id()
 
 
-def get_body_type(value):
-    mycursor.execute("SELECT TypeName FROM Body_type WHERE idBody_type=%d" % (value))
+def get_body_type(id_body_type):
+    mycursor.execute("SELECT TypeName FROM Body_type WHERE idBody_type=%d" % (id_body_type))
     return get_first_id()
 
 
-def get_model_name(value):
-    mycursor.execute("SELECT ModelName FROM Models WHERE idModels=%d" % (value))
+def get_model_name(id_model):
+    mycursor.execute("SELECT ModelName FROM Models WHERE idModels=%d" % (id_model))
     return get_first_id()
 
 
-def get_payment_name(value):
-    mycursor.execute("SELECT PaymentName FROM Form_of_payment WHERE idForm_of_payment=%d" % (value))
+def get_payment_name(id_form_payment):
+    mycursor.execute("SELECT PaymentName FROM Form_of_payment WHERE idForm_of_payment=%d" % (id_form_payment))
     return get_first_id()
 
 
-def get_client_firstname(value):
-    mycursor.execute("SELECT Firstname FROM Clients WHERE idClients=%d" % (value))
+def get_client_firstname(id_client):
+    mycursor.execute("SELECT Firstname FROM Clients WHERE idClients=%d" % (id_client))
     return get_first_id()
 
 
-def get_customer_firstname(value):
+def get_customer_firstname(id_customer):
+    mycursor.execute("SELECT Firstname FROM Customers WHERE idCustomers=%d" % (id_customer))
     return get_first_id()
 
 
@@ -92,10 +93,37 @@ def check_availability(car_data):
 def get_all_orders():
     sql_command = 'SELECT * FROM Orders'
     mycursor.execute(sql_command)
-    mycursor.fetchall()
+    return mycursor.fetchall()
 
 
 def get_all_cars():
     sql_command = 'SELECT * FROM Cars'
     mycursor.execute(sql_command)
-    mycursor.fetchall()
+    return mycursor.fetchall()
+
+
+def search_color_in_db(color):
+    if not(color == ''):
+        return get_idcolor(color)
+    else:
+        return ''
+
+
+def search_model_in_db(model):
+    if not(model == ''):
+        return get_idModel(model)
+    else:
+        return ''
+
+
+def search_body_type_in_db(body_type):
+    if not(body_type == ''):
+        return get_idBody_type(body_type)
+    else:
+        return ''
+
+
+def look_for_cars(values):
+    sql_command = "SELECT * FROM Cars WHERE "
+    mycursor.execute(sql_command + values)
+    return mycursor.fetchall()

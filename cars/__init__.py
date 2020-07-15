@@ -20,10 +20,6 @@ window.geometry(config.app_geom)
 
 # --------------------Actions--------------------------
 
-
-
-
-
 #create a dict "field: meaning"
 def create_dict(model, bodyType, transmition, color, mileage, engineCapacity, year, price):
     car_dict = {'Model_idModel': model, 'Body_type_idBody_type':bodyType, 'Transmition':transmition,
@@ -46,7 +42,7 @@ def between_markers(text, begin, end):
     return text[begin_index: end_index]
 
 
-def display_result(car_data):
+def display_cars(car_data):
     modified_data = between_markers(str(car_data), '(',')')
     values = str(modified_data).split(',')
     idColor, idBody_type, idModel = values[-3:]
@@ -64,28 +60,20 @@ def display_result(car_data):
         car_string += key + cars_row[key] + ' '
     return car_string
 
-
+def search_color_in_db(value):
+    if not(value == ''):
+        return db.get_idcolor(color_input_s.get())
+    else:
+        return ''
 
 
 # search a car
 def search_car():
-    sql_command = "SELECT * FROM Cars WHERE "
     where_clauses = []
-    if not(color_input_s.get() == ''):
-        idColor = db.get_idcolor(color_input_s.get())
-    else:
-        idColor = ''
 
-    if not(model_name_input_s.get() == ''):
-        idModel = db.get_idModel(model_name_input_s.get())
-    else:
-        idModel = ''
-
-    if not(body_type_input_s.get() == ''):
-        idBody_type = db.get_idBody_type(body_type_input_s.get())
-    else:
-        idBody_type = ''
-
+    idColor = db.search_color_in_db(color_input_s.get())
+    idModel = db.search_model_in_db(model_name_input_s.get())
+    idBody_type = db.search_body_type_in_db(body_type_input_s.get())
     transmition = transmition_input_s.get()
     mileage = mileage_input_s.get()
     engineCapacity = engine_capacity_input_s.get()
@@ -100,12 +88,11 @@ def search_car():
             where_clauses.append(key + "=" + "'" + car_dict.get(key) + "'")
     where_clauses = ' AND '.join(where_clauses)
 
-    db.execute(sql_command + where_clauses)
-    result = [i for i in mycursor]
-    if result:
-        for i in result:
-            if db.check_availability(i) == None:
-                txt.insert(INSERT, display_result(i) + '\n')
+    cars = [car for car in db.look_for_cars(where_clauses)]
+    if cars:
+        for car in cars:
+            if db.check_availability(car) == None:
+                txt.insert(INSERT, display_cars(car) + '\n')
     else:
         messagebox.showinfo('Ошибка',"Машина с такими характеристиками отсутствует!")
 
@@ -214,7 +201,7 @@ def watch_all_cars():
     all_car_text.delete("1.0", END)
     cars = db.get_all_cars()
     for car in cars:
-        all_car_text.insert(INSERT, display_result(car) + '\n')
+        all_car_text.insert(INSERT, display_cars(car) + '\n')
 
 
 def modify_str(order_data):

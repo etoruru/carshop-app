@@ -3,8 +3,8 @@
 app_title = 'CarShop App'
 app_geom = '700x400'
 
-db_host = "127.0.0.1"
-db_port = 3306
-db_pass = "cars"
-db_user = "test"
-db_name = "test"
+db_host = 'localhost'
+#db_port = 3306
+db_pass = '9884Nadya'
+db_user = 'root'
+db_name = 'mydb'
