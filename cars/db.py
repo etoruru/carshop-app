@@ -90,6 +90,11 @@ def check_availability(car_data):
     return get_first_id()
 
 
+def get_idcar(id_car):
+    mycursor.execute('SELECT idOrders FROM Orders WHERE Cars_idCars="%s"' % (id_car))
+    return get_first_id()
+
+
 def get_all_orders():
     sql_command = 'SELECT * FROM Orders'
     mycursor.execute(sql_command)
@@ -127,3 +132,45 @@ def look_for_cars(values):
     sql_command = "SELECT * FROM Cars WHERE "
     mycursor.execute(sql_command + values)
     return mycursor.fetchall()
+
+
+def delete_car(id_car):
+    sql_command = 'DELETE FROM Cars WHERE idCars=%s' % (id_car)
+    mycursor.execute(sql_command)
+    mydb.commit()
+
+
+def change_cardata(clauses, id_car):
+    sql_command = 'UPDATE Cars SET %s WHERE idCars=%s'
+    mycursor.execute(sql_command % (clauses, int(id_car)))
+    mydb.commit()
+
+
+def get_model_from_tCars(id_car):
+    mycursor.execute("SELECT Model_idModel FROM Cars WHERE idCars='%s'" % (id_car))
+    return get_first_id()
+
+
+def add_car(car_values):
+    sql_command = 'INSERT INTO Cars(Transmition, Mileage, PTC, Price,\
+                                    Year_of_issue, Engine_capacity, Color_idColor,\
+                                    Body_type_idBody_type, Model_idModel) \
+                                    VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s\
+                                    )'
+    mycursor.execute(sql_command,car_values)
+    mydb.commit()
+
+
+def add_client(passport_data, customer_firstName, customer_lastName, phone):
+    sql_command = "INSERT INTO Clients(Firstname, Lastname, Passport_data, Phone_num) VALUES(%s, %s, %s, %s)"
+    client_values = (customer_firstName, customer_lastName, passport_data, phone)
+    mycursor.execute(sql_command, client_values)
+    mydb.commit()
+
+
+def make_order(order_data):
+    sql_command = "INSERT INTO Orders(Data_of_sale, Cars_idCars, \
+                                      Clients_idClients, Customers_idCustomers, \
+                                      Form_of_payment_idForm_of_payment) VALUES(%s, %s, %s, %s, %s)"
+    mycursor.execute(sql_command, order_data)
+    mydb.commit()

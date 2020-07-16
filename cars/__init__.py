@@ -89,6 +89,7 @@ def search_car():
     where_clauses = ' AND '.join(where_clauses)
 
     cars = [car for car in db.look_for_cars(where_clauses)]
+    print(cars)
     if cars:
         for car in cars:
             if db.check_availability(car) == None:
@@ -122,35 +123,25 @@ def add_car():
     idModel = db.get_idModel(model_name_input.get())
     idBody_type = db.get_idBody_type(body_type_input.get())
 
-    sql_command = 'INSERT INTO Cars(Transmition, Mileage, PTC, Price, Year_of_issue, Engine_capacity, Color_idColor, Body_type_idBody_type, Model_idModel) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
     values = (transmition_input.get(), mileage_input.get(),
               num_ptc_input.get(), price_input.get(),
               year_issue_input.get(), float(engine_capacity_input.get()),
               int(idColor), int(idBody_type), int(idModel))
-    db.execute(sql_command, values)
-
-    # commit changes
-    db.commit()
+    db.add_car(values)
     messagebox.showinfo('','Машина добавлена!')
 
 
-def add_client(passport_data, customer_firstName, customer_lastName, phone):
-    sql_command = "INSERT INTO Clients(Firstname, Lastname, Passport_data, Phone_num) VALUES(%s, %s, %s, %s)"
-    values = (customer_firstName, customer_lastName, passport_data, phone)
-    db.execute(sql_command, values)
-    db.commit()
-
-
-def get_idcar(value):
+'''def get_idcar(value):
     idCar = None
     db.execute('SELECT idOrders FROM Orders WHERE Cars_idCars="%s"' % (value))
     for x in mycursor:
         idCar = ''.join([str(i) for i in list(x)])
-    return idCar
+    return idCar'''
 
 
 def check_car(idcar):
-    if get_idcar(idcar) == None:
+    print(db.get_idcar(idcar))
+    if db.get_idcar(idcar) == None:
         return True
     else:
         return False
@@ -180,7 +171,7 @@ def make_order():
 
     idClient = db.get_idClients(passport_data)
     if idClient == None:
-        add_client(passport_data, customer_firstName, customer_lastName, phone)
+        db.add_client(passport_data, customer_firstName, customer_lastName, phone)
         idClient = db.get_idClients(passport_data)
 
     idForm_of_payment = db.get_idform_payment(payment_form)
@@ -208,9 +199,7 @@ def modify_str(order_data):
     modified_data = between_markers(str(order_data), '(',')')
     values = str(modified_data).split(',')
     idCar, idClient, idCustomer, idform_payment = values[-4:]
-    db.execute("SELECT Model_idModel FROM Cars WHERE idCars='%s'" % (idCar))
-    for x in mycursor:
-        idModel = ''.join([str(i) for i in list(x)])
+    idModel = db.get_model_from_tCars(idCar)
     models_name = db.get_model_name(int(idModel))
     client_firstName = db.get_client_firstname(int(idClient))
     customer_firstName = db.get_customer_firstname(int(idCustomer))
@@ -229,28 +218,16 @@ def modify_str(order_data):
 def show_all_orders():
     orders = db.get_all_orders()
     for order in orders:
-        orders_txt.insert(INSERT, modify_str(orders) + '\n')
+        orders_txt.insert(INSERT, modify_str(order) + '\n')
 
 
 def update_car():
-    sql_command = 'UPDATE Cars SET %s WHERE idCars=%s'
     idCar = idCar_input_c.get()
+    idColor = db.search_color_in_db(color_input.get())
+    idModel = db.search_model_in_db(model_name_input.get())
+    idBody_type = db.search_body_type_in_db(body_type_input.get())
 
     set_clauses = []
-    if not(color_input.get() == ''):
-        idColor = db.get_idcolor(color_input.get())
-    else:
-        idColor = ''
-
-    if not(model_name_input.get() == ''):
-        idModel = db.get_idModel(model_name_input.get())
-    else:
-        idModel = ''
-
-    if not(body_type_input.get() == ''):
-        idBody_type = db.get_idBody_type(body_type_input.get())
-    else:
-        idBody_type = ''
 
     transmition = transmition_input.get()
     mileage = mileage_input.get()
@@ -265,22 +242,18 @@ def update_car():
         if not(car_dict.get(key) == None or car_dict.get(key) == ''):
             set_clauses.append(key + "=" + "'" + car_dict.get(key) + "'")
     set_clauses = ', '.join(set_clauses)
-    print(sql_command % (set_clauses, int(idCar)))
     if idCar:
-        db.execute(sql_command % (set_clauses, int(idCar)))
-        db.commit()
+        db.change_cardata(set_clauses, idCar)
         messagebox.showinfo('', 'Данные успешно изменены!')
     else:
         messagebox.showinfo('Ошибка!', 'Для изменения необходимо ввести номер машины!')
 
 
 def delete_car():
-    sql_command = 'DELETE FROM Cars WHERE idCars=%s' % (idCar_input_c.get())
     confirmation = messagebox.askyesno(title='Подтверждение',
                                        message='Вы действительно хотите удалить машину с № %s' % (idCar_input_c.get()))
     if confirmation:
-        db.execute(sql_command)
-        db.commit()
+        db.delete_car(idCar_input_c.get())
         messagebox.showinfo('', 'Данные успешно удалены!')
 
 
