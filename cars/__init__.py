@@ -2,6 +2,7 @@
 
 import cars.config as config
 import cars.db as db
+import cars.actions as actions
 
 from tkinter import *
 from tkinter import ttk
@@ -19,47 +20,6 @@ window.geometry(config.app_geom)
 
 
 # --------------------Actions--------------------------
-
-#create a dict "field: meaning"
-def create_dict(model, bodyType, transmition, color, mileage, engineCapacity, year, price):
-    car_dict = {'Model_idModel': model, 'Body_type_idBody_type':bodyType, 'Transmition':transmition,
-            'Color_idColor':color, 'Mileage':mileage, 'Engine_capacity':engineCapacity,
-            'Year_of_issue':year, 'Price':price
-            }
-    return car_dict
-
-
-def between_markers(text, begin, end):
-    if begin in text:
-        begin_index = text.find(begin) + len(begin)
-    else:
-        begin_index = 0
-
-    if end in text:
-        end_index = text.find(end)
-    else:
-        end_index = len(text)
-    return text[begin_index: end_index]
-
-
-def display_cars(car_data):
-    modified_data = between_markers(str(car_data), '(',')')
-    values = str(modified_data).split(',')
-    idColor, idBody_type, idModel = values[-3:]
-    color_name = db.get_colorname(int(idColor))
-    body_type = db.get_body_type(int(idBody_type))
-    model_name = db.get_model_name(int(idModel))
-    values = values[:-3] + [color_name, body_type, model_name] + ['\n']
-    key = ['№: ', "Коробка передач: ", "Пробег: ",
-           "№РТС: ", "Цена: ", "Год выпуска: ",
-           "Объем двигателя: ", "Цвет: ", "Тип кузова: ",
-           "Модель: "]
-    cars_row = {key[i]: values[i] for i in range(len(key))}
-    car_string = ' '
-    for key in cars_row.keys():
-        car_string += key + cars_row[key] + ' '
-    return car_string
-
 def search_color_in_db(value):
     if not(value == ''):
         return db.get_idcolor(color_input_s.get())
@@ -69,8 +29,6 @@ def search_color_in_db(value):
 
 # search a car
 def search_car():
-    where_clauses = []
-
     idColor = db.search_color_in_db(color_input_s.get())
     idModel = db.search_model_in_db(model_name_input_s.get())
     idBody_type = db.search_body_type_in_db(body_type_input_s.get())
@@ -80,20 +38,15 @@ def search_car():
     year = year_issue_input_s.get()
     price = price_input_s.get()
 
-    car_dict = create_dict(idModel, idBody_type, transmition,
-                           idColor, mileage, engineCapacity,
-                           year, price)
-    for key in car_dict.keys():
-        if not(car_dict.get(key) == None or car_dict.get(key) == ''):
-            where_clauses.append(key + "=" + "'" + car_dict.get(key) + "'")
-    where_clauses = ' AND '.join(where_clauses)
+    where_clauses = actions.create_clauses(idModel, idBody_type, transmition,
+                                   idColor, mileage, engineCapacity,
+                                   year, price)
 
     cars = [car for car in db.look_for_cars(where_clauses)]
-    print(cars)
     if cars:
         for car in cars:
             if db.check_availability(car) == None:
-                txt.insert(INSERT, display_cars(car) + '\n')
+                txt.insert(INSERT, actions.display_cars(car) + '\n')
     else:
         messagebox.showinfo('Ошибка',"Машина с такими характеристиками отсутствует!")
 
@@ -131,26 +84,14 @@ def add_car():
     messagebox.showinfo('','Машина добавлена!')
 
 
-'''def get_idcar(value):
-    idCar = None
-    db.execute('SELECT idOrders FROM Orders WHERE Cars_idCars="%s"' % (value))
-    for x in mycursor:
-        idCar = ''.join([str(i) for i in list(x)])
-    return idCar'''
-
-
 def check_car(idcar):
-    print(db.get_idcar(idcar))
     if db.get_idcar(idcar) == None:
         return True
     else:
         return False
 
-def make_order():
-    sql_command = "INSERT INTO Orders(Data_of_sale, Cars_idCars, \
-                                      Clients_idClients, Customers_idCustomers, \
-                                      Form_of_payment_idForm_of_payment) VALUES(%s, %s, %s, %s, %s)"
 
+def make_order():
     customer_firstName = customer_firstName_input.get()
     customer_lastName = customer_lastName_input.get()
     passport_data = passport_data_input.get()
@@ -181,8 +122,7 @@ def make_order():
         if  not data == None:
             val.append(data)
     if len(val) == len(values):
-        db.execute(sql_command, values)
-        db.commit()
+        db.make_order(order_data)
         messagebox.showinfo("", "Заказ оформлен!")
     else:
         messagebox.showinfo("Ошибка!", "Все поля должны быть заполнены!")
@@ -192,33 +132,14 @@ def watch_all_cars():
     all_car_text.delete("1.0", END)
     cars = db.get_all_cars()
     for car in cars:
-        all_car_text.insert(INSERT, display_cars(car) + '\n')
-
-
-def modify_str(order_data):
-    modified_data = between_markers(str(order_data), '(',')')
-    values = str(modified_data).split(',')
-    idCar, idClient, idCustomer, idform_payment = values[-4:]
-    idModel = db.get_model_from_tCars(idCar)
-    models_name = db.get_model_name(int(idModel))
-    client_firstName = db.get_client_firstname(int(idClient))
-    customer_firstName = db.get_customer_firstname(int(idCustomer))
-    payment_name = db.get_payment_name(int(idform_payment))
-
-    values = values[:-4] + [models_name, client_firstName, customer_firstName, payment_name] + ['\n']
-    key = ['№: ', "Год продажи: ", "Марка: ",
-           "Фамилия клиента: ", "Фамилия продавца: ", "Форма оплаты: "]
-    order_row = {key[i]: values[i] for i in range(len(key))}
-    order_string = ' '
-    for key in order_row.keys():
-        order_string += key + order_row[key] + ' '
-    return order_string
+        all_car_text.insert(INSERT, actions.display_cars(car) + '\n')
 
 
 def show_all_orders():
+    orders_txt.delete("1.0", END)
     orders = db.get_all_orders()
     for order in orders:
-        orders_txt.insert(INSERT, modify_str(order) + '\n')
+        orders_txt.insert(INSERT, actions.modify_str(order) + '\n')
 
 
 def update_car():
@@ -226,22 +147,15 @@ def update_car():
     idColor = db.search_color_in_db(color_input.get())
     idModel = db.search_model_in_db(model_name_input.get())
     idBody_type = db.search_body_type_in_db(body_type_input.get())
-
-    set_clauses = []
-
     transmition = transmition_input.get()
     mileage = mileage_input.get()
     engineCapacity = engine_capacity_input.get()
     year = year_issue_input.get()
     price = price_input.get()
 
-    car_dict = create_dict(idModel, idBody_type, transmition,
-                           idColor, mileage, engineCapacity,
-                           year, price)
-    for key in car_dict.keys():
-        if not(car_dict.get(key) == None or car_dict.get(key) == ''):
-            set_clauses.append(key + "=" + "'" + car_dict.get(key) + "'")
-    set_clauses = ', '.join(set_clauses)
+    set_clauses = actions.create_clauses(idModel, idBody_type, transmition,
+                                 idColor, mileage, engineCapacity,
+                                 year, price)
     if idCar:
         db.change_cardata(set_clauses, idCar)
         messagebox.showinfo('', 'Данные успешно изменены!')
@@ -255,8 +169,6 @@ def delete_car():
     if confirmation:
         db.delete_car(idCar_input_c.get())
         messagebox.showinfo('', 'Данные успешно удалены!')
-
-
 
 
 # --------------------Interface--------------------------
@@ -493,8 +405,6 @@ show_orders_button.grid(row=1, column=2, pady=5)
 
 orders_txt = scrolledtext.ScrolledText(all_orders_tab,width=70,height=15)
 orders_txt.grid(column=0,row=0, columnspan=4)
-
-# ask_idorder = messagebox.askquestion('title', 'content')
 
 
 tab_control.pack(expand=1, fill='both')
